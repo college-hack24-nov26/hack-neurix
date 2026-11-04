@@ -1,7 +1,7 @@
 // HealthCoach.jsx
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Dumbbell, Apple, Droplets, Moon, Brain, ChevronRight, CheckCircle, Target } from 'lucide-react'
+import { Dumbbell, Apple, Droplets, Moon, Brain, CheckCircle } from 'lucide-react'
 
 const categories = [
   { key: 'diet', label: 'Diet & Nutrition', icon: Apple, color: 'from-green-500 to-teal-500',
@@ -16,13 +16,6 @@ const categories = [
     tips: ['Practice deep breathing exercises daily', 'Try mindfulness meditation for 10 minutes/day', 'Exercise regularly to reduce cortisol levels', 'Maintain strong social connections', 'Set realistic goals and prioritize tasks', 'Seek professional help if stress becomes unmanageable'] },
 ]
 
-const weeklyGoals = [
-  { label: '150 min exercise', current: 90, target: 150, unit: 'min' },
-  { label: '8 glasses water/day', current: 6, target: 8, unit: 'glasses' },
-  { label: '7h sleep/night', current: 6.5, target: 7, unit: 'hrs' },
-  { label: '10k steps/day', current: 7800, target: 10000, unit: 'steps' },
-]
-
 export default function HealthCoach() {
   const [active, setActive] = useState('diet')
   const activeCat = categories.find((c) => c.key === active)
@@ -32,25 +25,6 @@ export default function HealthCoach() {
       <div>
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">AI Health Coach</h1>
         <p className="text-slate-500 text-sm mt-1">Personalized wellness guidance for diet, fitness, and mental health</p>
-      </div>
-
-      {/* Weekly Goals */}
-      <div className="glass-card p-6">
-        <h2 className="font-semibold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2"><Target size={18} className="text-blue-500" /> Weekly Goals</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {weeklyGoals.map(({ label, current, target, unit }) => (
-            <div key={label} className="text-center p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-              <div className="relative w-14 h-14 mx-auto mb-2">
-                <svg className="w-14 h-14 -rotate-90"><circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="4" className="text-slate-200 dark:text-slate-700" />
-                  <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="4" className="text-blue-500" strokeDasharray={`${2 * Math.PI * 22}`} strokeDashoffset={`${2 * Math.PI * 22 * (1 - Math.min(current / target, 1))}`} strokeLinecap="round" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-300">{Math.round((current / target) * 100)}%</span>
-              </div>
-              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</p>
-              <p className="text-xs text-slate-400">{current} / {target} {unit}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Category tabs */}

@@ -75,6 +75,7 @@ class User(Base):
     gender: Mapped[Optional[str]] = mapped_column(String(20))
     profile_photo: Mapped[Optional[str]] = mapped_column(String(500))
     language: Mapped[str] = mapped_column(String(10), default="en", server_default="en")
+    notification_preferences: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=False, default=dict, server_default=text("'{}'::jsonb"))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(

@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Heart, Activity, Droplets, Wind, Scale, TrendingUp,
   TrendingDown, AlertCircle, CheckCircle, ArrowRight,
   Search, MessageSquare, FileText, MapPin, Bell, Calendar, FlaskConical
 } from 'lucide-react'
-import { Line, Doughnut } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement,
   LineElement, ArcElement, Tooltip, Legend, Filler
 } from 'chart.js'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/authStore'
-import { healthService } from '../services/api'
+import { healthService, historyService } from '../services/api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend, Filler)
 
@@ -27,16 +27,6 @@ const quickActions = [
 
 // Vitals loaded from API (see useEffect below)
 
-const healthScoreData = {
-  labels: ['Cardiovascular', 'Nutrition', 'Activity', 'Sleep', 'Mental'],
-  datasets: [{
-    data: [82, 74, 68, 78, 85],
-    backgroundColor: ['#3b82f6', '#00a878', '#f59e0b', '#8b5cf6', '#06b6d4'],
-    borderWidth: 0,
-    hoverOffset: 6,
-  }],
-}
-
 const lineOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -47,25 +37,17 @@ const lineOptions = {
   },
 }
 
-const doughnutOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { position: 'right', labels: { font: { family: 'Poppins', size: 11 }, padding: 12 } },
-    tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw}%` } },
-  },
-  cutout: '65%',
-}
-
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } }
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } }
 
 export default function Dashboard() {
   const { user } = useAuthStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [vitals, setVitals] = useState([])
   const [healthScore, setHealthScore] = useState(null)
   const [heartTrend, setHeartTrend] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
   const greeting = () => {
@@ -104,6 +86,7 @@ export default function Dashboard() {
       }
     }
     fetchDashboard()
+    historyService.getAll().then(({ data }) => setRecentActivity((data.items || []).slice(0, 4))).catch(() => {})
   }, [])
 
   return (
@@ -136,12 +119,22 @@ export default function Dashboard() {
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800"
+        className={`flex items-start gap-3 p-4 rounded-xl border ${
+          vitals.length === 0
+            ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+            : healthScore >= 70
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+        }`}
       >
-        <CheckCircle size={18} className="text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+        <CheckCircle size={18} className="text-slate-500 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-green-700 dark:text-green-400">Health Status: Good</p>
-          <p className="text-xs text-green-600 dark:text-green-500">All your vitals are within normal range. Keep up the healthy habits!</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            {vitals.length === 0 ? 'Health Status: No readings yet' : `Health Status: ${healthScore >= 70 ? 'Good' : 'Needs attention'}`}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {vitals.length === 0 ? 'Log your vitals to receive a status based on your data.' : 'Status is estimated from the latest available readings.'}
+          </p>
         </div>
       </motion.div>
 
@@ -212,14 +205,16 @@ export default function Dashboard() {
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">Heart Rate — Weekly</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Beats per minute</p>
             </div>
-            <span className="badge-success">Avg 71 bpm</span>
+            <span className="badge-success">
+              {heartTrend.length ? `Avg ${Math.round(heartTrend.reduce((sum, r) => sum + Number(r.value), 0) / heartTrend.length)} bpm` : 'No data'}
+            </span>
           </div>
           <div className="h-52">
             <Line data={{
-              labels: heartTrend.length ? heartTrend.map(r => new Date(r.date).toLocaleDateString('en', { weekday: 'short' })) : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+              labels: heartTrend.length ? heartTrend.map(r => new Date(r.date).toLocaleDateString('en', { weekday: 'short' })) : [],
               datasets: [{
                 label: 'Heart Rate',
-                data: heartTrend.length ? heartTrend.map(r => r.value) : [0,0,0,0,0,0,0],
+                data: heartTrend.length ? heartTrend.map(r => r.value) : [],
                 borderColor: '#ef4444',
                 backgroundColor: 'rgba(239,68,68,0.08)',
                 borderWidth: 2,
@@ -238,10 +233,7 @@ export default function Dashboard() {
             <h3 className="font-semibold text-slate-800 dark:text-slate-100">Health Score</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Overall wellness breakdown</p>
           </div>
-          <div className="h-44">
-            <Doughnut data={healthScoreData} options={doughnutOptions} />
-          </div>
-          <div className="text-center mt-4">
+          <div className="text-center py-10">
             <p className="text-3xl font-bold text-gradient">{healthScore !== null ? healthScore : '—'}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">out of 100</p>
           </div>
@@ -257,22 +249,19 @@ export default function Dashboard() {
           </Link>
         </div>
         <div className="space-y-4">
-          {[
-            { icon: Search, label: 'Symptom Check', desc: 'Analyzed 4 symptoms — Low risk result', time: '2 hours ago', color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
-            { icon: Activity, label: 'Vitals Logged', desc: 'Blood pressure 118/78 mmHg recorded', time: '5 hours ago', color: 'text-green-500 bg-green-50 dark:bg-green-900/20' },
-            { icon: FileText, label: 'Report Uploaded', desc: 'Blood test report analyzed by AI', time: 'Yesterday', color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' },
-            { icon: MessageSquare, label: 'AI Chat', desc: 'Asked about headache causes and remedies', time: '2 days ago', color: 'text-teal-500 bg-teal-50 dark:bg-teal-900/20' },
-          ].map(({ icon: Icon, label, desc, time, color }) => (
-            <div key={label} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-              <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
-                <Icon size={17} />
+          {recentActivity.length === 0 ? (
+            <p className="text-sm text-slate-400 text-center py-6">No recent activity yet.</p>
+          ) : recentActivity.map((entry) => (
+            <button key={entry.id} onClick={() => entry.route && navigate(entry.route)}
+              className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left">
+              <div className="w-10 h-10 rounded-xl text-blue-500 bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                <Activity size={17} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{label}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{desc}</p>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{entry.title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{entry.route || 'App activity'}</p>
               </div>
-              <span className="text-xs text-slate-400 flex-shrink-0">{time}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import toast from 'react-hot-toast'
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' })
@@ -64,7 +65,9 @@ export default function Login() {
             <input type="checkbox" className="rounded border-slate-300 text-blue-600" />
             <span className="text-sm text-slate-600 dark:text-slate-400">Remember me</span>
           </label>
-          <a href="#" className="text-sm font-medium text-blue-600 hover:text-blue-700">Forgot password?</a>
+          <button type="button" onClick={() => toast('Password reset must be requested from your administrator.')} className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            Forgot password?
+          </button>
         </div>
 
         <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center py-3.5">

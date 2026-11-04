@@ -7,7 +7,7 @@ PUT  /auth/profile
 PUT  /auth/password
 """
 from datetime import date
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator
@@ -107,6 +107,13 @@ class PasswordChange(BaseModel):
         return v
 
 
+class NotificationPreferences(BaseModel):
+    healthReminders: bool = True
+    medicationAlerts: bool = True
+    reportReady: bool = True
+    newsletter: bool = False
+
+
 def user_to_dict(user: User) -> dict:
     return {
         "id":          str(user.id),
@@ -117,6 +124,7 @@ def user_to_dict(user: User) -> dict:
         "dateOfBirth": iso(user.date_of_birth),
         "gender":      user.gender,
         "language":    user.language or "en",
+        "notificationPreferences": user.notification_preferences or {},
         "createdAt":   iso(user.created_at),
     }
 
@@ -213,3 +221,27 @@ async def change_password(
     db.add(current_user)
     await db.commit()
     return {"message": "Password updated successfully."}
+
+
+@router.get("/preferences/notifications", response_model=NotificationPreferences)
+async def get_notification_preferences(current_user: User = Depends(get_current_user)):
+    values = current_user.notification_preferences or {}
+    return NotificationPreferences(
+        healthReminders=values.get("healthReminders", True),
+        medicationAlerts=values.get("medicationAlerts", True),
+        reportReady=values.get("reportReady", True),
+        newsletter=values.get("newsletter", False),
+    )
+
+
+@router.put("/preferences/notifications", response_model=NotificationPreferences)
+async def update_notification_preferences(
+    body: NotificationPreferences,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    current_user.notification_preferences = body.model_dump()
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return NotificationPreferences(**current_user.notification_preferences)

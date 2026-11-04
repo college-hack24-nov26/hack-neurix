@@ -44,6 +44,14 @@ export default function Settings() {
     imageAnalysisService.status()
       .then(({ data }) => setAiStatus(data))
       .catch(() => setAiStatus(null))
+    api.get('/auth/preferences/notifications')
+      .then(({ data }) => setNotifications({
+        healthReminders: data.healthReminders,
+        medicationAlerts: data.medicationAlerts,
+        reportReady: data.reportReady,
+        newsletter: data.newsletter,
+      }))
+      .catch(() => {})
   }, [])
 
   const handleSave = async () => {
@@ -133,7 +141,13 @@ export default function Settings() {
                   <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">{label}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
                 </div>
-                <button onClick={() => setNotifications({ ...notifications, [key]: !notifications[key] })}
+                <button onClick={() => {
+                  const next = { ...notifications, [key]: !notifications[key] }
+                  setNotifications(next)
+                  api.put('/auth/preferences/notifications', next)
+                    .then(() => toast.success('Notification preferences saved'))
+                    .catch(() => toast.error('Could not save notification preferences'))
+                }}
                   className={`w-11 h-6 rounded-full transition-colors ${notifications[key] ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}>
                   <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${notifications[key] ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>

@@ -117,8 +117,8 @@ export default function Register() {
         <label className="flex items-start gap-2 cursor-pointer">
           <input type="checkbox" required className="mt-0.5 rounded border-slate-300 text-blue-600" />
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            I agree to the <a href="#" className="text-blue-600">Terms of Service</a> and{' '}
-            <a href="#" className="text-blue-600">Privacy Policy</a>. I understand this platform provides health information only.
+            I agree to the <Link to="/terms" target="_blank" className="text-blue-600">Terms of Service</Link> and{' '}
+            <Link to="/privacy" target="_blank" className="text-blue-600">Privacy Policy</Link>. I understand this platform provides health information only.
           </span>
         </label>
 

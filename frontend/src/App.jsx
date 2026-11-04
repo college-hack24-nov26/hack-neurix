@@ -31,6 +31,7 @@ const Login         = lazy(() => import('./pages/auth/Login'))
 const Register      = lazy(() => import('./pages/auth/Register'))
 const Emergency     = lazy(() => import('./pages/Emergency'))
 const HistoryPage   = lazy(() => import('./pages/History'))
+const Legal         = lazy(() => import('./pages/Legal'))
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -65,6 +66,8 @@ export default function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<Home />} />
+        <Route path="/terms" element={<Legal />} />
+        <Route path="/privacy" element={<Legal />} />
         <Route element={<AuthLayout />}>
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
