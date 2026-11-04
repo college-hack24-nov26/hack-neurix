@@ -1,0 +1,40 @@
+databases:
+  - name: hack-neurix-db
+    plan: free
+    databaseName: hack_neurix
+    user: hack_neurix
+
+services:
+  - type: web
+    name: hack-neurix-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health-check
+    preDeployCommand: alembic upgrade head && python seed_db.py
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hack-neurix-db
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: '["https://hack-neurix.onrender.com"]'
+
+  - type: web
+    name: hack-neurix
+    runtime: docker
+    plan: free
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: VITE_API_URL
+        value: https://hack-neurix-api.onrender.com/api

@@ -147,3 +147,17 @@ docker-compose.yml              # postgres + backend + frontend
 - [ ] Put `backend/uploads` on persistent / object storage
 - [ ] Schedule `pg_dump` backups
 - [ ] Never commit `backend/.env` — rotate any API key that has ever been committed or shared
+
+## Deploy to Render
+
+The repository includes a Render Blueprint at [`render.yaml`](render.yaml). It creates:
+
+- `hack-neurix-db` PostgreSQL database
+- `hack-neurix-api` FastAPI backend
+- `hack-neurix` React frontend
+
+1. Push this repository to GitHub.
+2. Open the Render Dashboard and choose **Blueprints > New Blueprint Instance**.
+3. Select the GitHub repository and accept the blueprint services.
+4. Set optional API keys (`GROQ_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) in the backend service after deployment if AI responses are required.
+5. If Render assigns a different frontend URL, update the backend `ALLOWED_ORIGINS` environment variable and redeploy.
