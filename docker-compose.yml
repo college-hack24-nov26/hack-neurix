@@ -1,0 +1,62 @@
+services:
+  # ── PostgreSQL Database ───────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: homecare_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-homecare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-homecare}
+      POSTGRES_DB: ${POSTGRES_DB:-homecare_plus}
+    ports:
+      - "5433:5432"          # host 5433 -> container 5432 (avoids clashing with a local Postgres)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-homecare} -d ${POSTGRES_DB:-homecare_plus}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── FastAPI Backend ───────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: homecare_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # API keys / SECRET_KEY etc. come from backend/.env (copy backend/.env.example).
+    # The file is optional so `docker compose up` works on a fresh checkout.
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-homecare}:${POSTGRES_PASSWORD:-homecare}@postgres:5432/${POSTGRES_DB:-homecare_plus}
+    ports:
+      - "8100:8000"
+    volumes:
+      - uploads_data:/app/uploads
+    # 1) apply schema migrations  2) load disease library / hospitals / doctors (idempotent)  3) serve
+    command: >
+      sh -c "alembic upgrade head &&
+             python seed_db.py &&
+             uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2"
+
+  # ── React Frontend ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: homecare_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  uploads_data:

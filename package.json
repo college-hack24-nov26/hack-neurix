@@ -1,0 +1,16 @@
+{
+  "name": "homecare-plus",
+  "version": "1.0.0",
+  "description": "AI-Powered Digital Healthcare Platform",
+  "private": true,
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && uvicorn main:app --reload --port 8000",
+    "install:frontend": "cd frontend && npm install",
+    "build:frontend": "cd frontend && npm run build",
+    "train:ml": "cd backend && python ml/train_model.py",
+    "seed:db": "cd backend && python seed_db.py",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down"
+  }
+}

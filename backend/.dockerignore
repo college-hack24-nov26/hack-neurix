@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.py[cod]
+uploads/
+install.log
+.env
+tests/
+*.md
